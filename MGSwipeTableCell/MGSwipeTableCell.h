@@ -148,6 +148,9 @@ typedef NS_ENUM(NSInteger, MGSwipeState) {
 /** Property to read or change the current swipe offset programmatically */
 @property (nonatomic, assign) CGFloat swipeOffset;
 
+/** Set prior to calling editing if you want to allow swiping during editing (may conflict with swipe to delete if enabled) */
+@property (nonatomic, assign) BOOL swipeWhileEditing;
+
 /** Utility methods to show or hide swipe buttons programmatically */
 -(void) hideSwipeAnimated: (BOOL) animated;
 -(void) showSwipe: (MGSwipeDirection) direction animated: (BOOL) animated;

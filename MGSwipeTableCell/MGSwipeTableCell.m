@@ -617,7 +617,7 @@ typedef struct MGSwipeAnimationData {
 -(void) setEditing:(BOOL)editing animated:(BOOL)animated
 {
     [super setEditing:editing animated:animated];
-    if (editing) { //disable swipe buttons when the user sets table editing mode
+    if (editing && !self.swipeWhileEditing) { //disable swipe buttons when the user sets table editing mode
         self.swipeOffset = 0;
     }
 }
@@ -625,7 +625,7 @@ typedef struct MGSwipeAnimationData {
 -(void) setEditing:(BOOL)editing
 {
     [super setEditing:YES];
-    if (editing) { //disable swipe buttons when the user sets table editing mode
+    if (editing && !self.swipeWhileEditing) { //disable swipe buttons when the user sets table editing mode
         self.swipeOffset = 0;
     }
 }
@@ -838,6 +838,10 @@ typedef struct MGSwipeAnimationData {
 }
 -(void) setSwipeOffset:(CGFloat)offset animated: (BOOL) animated completion:(void(^)()) completion
 {
+    if(self.swipeWhileEditing)
+    {
+        self.reorderControlHidden = offset != 0; // Hide reorder control if we allow swipe while editing
+    }
     _animationCompletion = completion;
     if (_displayLink) {
         [_displayLink invalidate];
@@ -856,6 +860,15 @@ typedef struct MGSwipeAnimationData {
     _animationData.start = 0;
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(animationTick:)];
     [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+}
+
+- (void)setReorderControlHidden:(BOOL)hide
+{
+    for(UIView *view in self.subviews)
+    {
+        if([NSStringFromClass(view.class) isEqualToString:@"UITableViewCellReorderControl"])
+            view.hidden = hide;
+    }
 }
 
 #pragma mark Gestures
@@ -909,7 +922,12 @@ typedef struct MGSwipeAnimationData {
     if (gestureRecognizer == _panRecognizer) {
         
         if (self.isEditing) {
-            return NO; //do not swipe while editing table
+            if(!self.swipeWhileEditing)
+                return NO; //do not swipe while editing table
+            
+            // Allow swipe while editing, but we have to hide the accessory view or it gets ugly.
+            self.showsReorderControl = NO;
+            [self setNeedsLayout];
         }
         
         CGPoint translation = [_panRecognizer translationInView:self];
